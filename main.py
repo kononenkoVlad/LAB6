@@ -1,6 +1,8 @@
-from tkinter import Tk, Canvas
+from tkinter import Tk, Canvas, Button
 from functions import *
 from random import seed
+from create_W import create_W, A
+from Kruskals_algorithm import Kruskals_algorithm
 
 window = Tk()
 window.geometry(f'{window_width}x{window_height}')
@@ -11,21 +13,13 @@ canvas = Canvas(width=window_width, height=window_height)
 canvas.pack()
 
 seed(seed_value)
+W = create_W()
 
-print("матриця напрямленого графа:")
-matrix_for_directed_graph = create_matrix_for_directed_graph(count_of_vertexes)
-for row in matrix_for_directed_graph:
-    print(row)
-canvas.create_text(300, 20, text="напрямлений граф", font=("Arial", 20))
-vertexes_for_directed_graph = create_vertexes(300, 300, graph_size, count_of_vertexes, canvas)
-draw_edges(matrix_for_directed_graph, vertexes_for_directed_graph, True, canvas)
+canvas.create_text(300, 20, text="ненапрямлений граф", font=("Arial", 20))
+vertexes = draw_graph(300, 300, graph_size, W, canvas)
 
-print("\nматриця ненапрямленого графа:")
-matrix_for_undirected_graph = create_matrix_for_undirected_graph(matrix_for_directed_graph)
-for row in matrix_for_undirected_graph:
-    print(row)
-canvas.create_text(800, 20, text="ненапрямлений граф", font=("Arial", 20))
-vertexes_for_undirected_graph = create_vertexes(800, 300, graph_size, count_of_vertexes, canvas)
-draw_edges(matrix_for_undirected_graph, vertexes_for_undirected_graph, False, canvas)
+button = Button(window, text="start", bg=buttonColors, fg="black", font=("Arial", 20),
+                command=lambda: Kruskals_algorithm(W, canvas, vertexes, button))
+button.place(x=600, y=300)
 
 window.mainloop()

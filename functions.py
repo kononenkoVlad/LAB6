@@ -1,27 +1,84 @@
-from tkinter import LAST
-from math import pi, cos, sin, sqrt
+from math import *
 from random import random
 from data import *
 
 
+def create_list():
+    return {
+        "data": None,
+        "next": None,
+    }
+
+
+def add(head, data):
+    while head["next"] is not None:
+        head = head["next"]
+    node = {
+        "data": data,
+        "next": None,
+    }
+    head["next"] = node
+
+
+def get(head, i):
+    for j in range(i+1):
+        head = head["next"]
+    return head["data"]
+
+
+def get_length(head):
+    length = 0
+    while head["next"] is not None:
+        length += 1
+        head = head["next"]
+    return length
+
+
+def includes(head, data):
+    length = get_length(head)
+    for i in range(length+1):
+        if head["data"] == data:
+            return True
+        head = head["next"]
+    return False
+
+
+def delete(head, index):
+    while head["next"] is not None:
+        if index == 0:
+            head["next"] = head["next"]["next"]
+            return
+        head = head["next"]
+        index -= 1
+
+
+
+
 def create_vertex(left, top, text, canvas):
-    canvas.create_text(left, top, text=text+1, font=("Arial", vertex_size))
-    canvas.create_oval(left - vertex_size, top - vertex_size, left + vertex_size, top + vertex_size,
-                       fill="", outline="red")
+    text = canvas.create_text(left, top, text=text+1, font=("Arial", vertex_size))
+    oval = canvas.create_oval(left - vertex_size, top - vertex_size, left + vertex_size, top + vertex_size, fill="",
+                              outline="red")
+    return {
+        "text": text,
+        "oval": oval
+    }
 
 
 def create_vertexes(left, top, size, count, canvas):
-    vertexes = [{}] * count
+    vertexes = create_list()
     for i in range(count):
         angle = i * 2 * pi/count
         vertex_left = left + size * sin(angle)
         vertex_top = top - size * cos(angle)
-        create_vertex(vertex_left, vertex_top, i, canvas)
+        vertex_window_elements = create_vertex(vertex_left, vertex_top, i, canvas)
         vertex = {
             "left": vertex_left,
             "top": vertex_top,
+            "text": vertex_window_elements["text"],
+            "oval": vertex_window_elements["oval"],
+            "number": i
         }
-        vertexes[i] = vertex
+        add(vertexes, vertex)
         i += 1
     return vertexes
 
@@ -56,56 +113,64 @@ def create_matrix_for_undirected_graph(matrix_for_directed_graph):
     return matrix
 
 
-def draw_self_arrow(left, top, i, count_of_vertexes_in_this_graph, canvas):
-    main_angle = i / count_of_vertexes_in_this_graph * 2 * pi
-    lefter_angle = main_angle + extra_angle_in_self_arrow
-    righter_angle = main_angle - extra_angle_in_self_arrow
-    first_point_x = left+sin(lefter_angle)*2*vertex_size
-    first_point_y = top-cos(lefter_angle)*2*vertex_size
-    second_point_x = left+sin(righter_angle)*2*vertex_size
-    second_point_y = top-cos(righter_angle)*2*vertex_size
-    canvas.create_line(first_point_x, first_point_y, second_point_x, second_point_y)
-    canvas.create_line(left + vertex_size*sin(lefter_angle), top - vertex_size*cos(lefter_angle),
-                       first_point_x, first_point_y)
-    canvas.create_line(second_point_x, second_point_y, left + vertex_size*sin(righter_angle),
-                       top - vertex_size*cos(righter_angle), arrow=LAST)
-
-
-def draw_line(left_i, top_i, left_j, top_j, sin_angle, cos_angle, canvas):
+def draw_line(left_i, top_i, left_j, top_j, color, width, canvas):
+    dx = left_i - left_j
+    dy = top_i - top_j
+    line_length = sqrt(dx * dx + dy * dy)
+    cos_angle = dx / line_length
+    sin_angle = -dy / line_length
     left_from = left_i - vertex_size * cos_angle
     left_to = left_j + vertex_size * cos_angle
     top_from = top_i + vertex_size * sin_angle
     top_to = top_j - vertex_size * sin_angle
-    canvas.create_line(left_from, top_from, left_to, top_to)
+    canvas.create_line(left_from, top_from, left_to, top_to, fill=color, width=width)
 
 
-def draw_arrow(left_i, top_i, left_j, top_j, sin_angle, cos_angle, canvas):
-    left_from = left_i - vertex_size * cos_angle + sin_angle * space_between_edges
-    left_to = left_j + vertex_size * cos_angle + sin_angle * space_between_edges
-    top_from = top_i + vertex_size * sin_angle + cos_angle * space_between_edges
-    top_to = top_j - vertex_size * sin_angle + cos_angle * space_between_edges
-    canvas.create_line(left_from, top_from, left_to, top_to, arrow=LAST)
-
-
-def draw_edges(matrix, vertexes, directed, canvas):
+def draw_edges(matrix, vertexes, canvas):
     length = len(matrix)
     for i in range(length):
-        for j in range(length if directed else i+1):
+        for j in range(i+1):
             if not matrix[i][j]:
                 continue
-            if i == j:
-                left = vertexes[i]["left"]
-                top = vertexes[i]["top"]
-                draw_self_arrow(left, top, i, length, canvas)
-                continue
-            left_i = vertexes[i]["left"]
-            left_j = vertexes[j]["left"]
-            top_i = vertexes[i]["top"]
-            top_j = vertexes[j]["top"]
+            left_i = get(vertexes, i)["left"]
+            left_j = get(vertexes, j)["left"]
+            top_i = get(vertexes, i)["top"]
+            top_j = get(vertexes, j)["top"]
             dx = left_i - left_j
             dy = top_i - top_j
             line_length = sqrt(dx * dx + dy * dy)
             cos_angle = dx/line_length
             sin_angle = -dy/line_length
-            draw_arrow(left_i, top_i, left_j, top_j, sin_angle, cos_angle, canvas) if directed else (
-                draw_line(left_i, top_i, left_j, top_j, sin_angle, cos_angle, canvas))
+            draw_line(left_i, top_i, left_j, top_j, 'black', 1, canvas)
+            text_higher_line = 6
+            higher = text_higher_line*cos_angle
+            lefter = text_higher_line*sin_angle
+            angle = asin(sin_angle)*180/pi
+            if left_j > left_i:
+                angle = -angle
+            canvas.create_text((left_i+left_j)/2+lefter, (top_i+top_j)/2+higher, text=matrix[i][j], angle=angle,
+                               fill="#0000aa", font=("Arial", weight_text_size))
+
+
+def draw_graph(left, top, size, matrix, canvas):
+    length = len(matrix)
+    vertexes = create_vertexes(left, top, size, length, canvas)
+    draw_edges(matrix, vertexes, canvas)
+    return vertexes
+
+
+lighted_vertexes = []
+def paint_opened_edge(canvas, vertexes, vertex_1_number, vertex_2_number):
+    vertex_1 = get(vertexes, vertex_1_number)
+    vertex_2 = get(vertexes, vertex_2_number)
+
+    draw_line(vertex_1["left"], vertex_1["top"], vertex_2["left"],
+              vertex_2["top"], "red", 3, canvas)
+    if not (vertex_1_number in lighted_vertexes):
+        lighted_vertexes.append(vertex_1_number)
+        canvas.itemconfig(vertex_1["oval"], fill="blue")
+        canvas.tag_raise(vertex_1["text"])
+    if not (vertex_2_number in lighted_vertexes):
+        lighted_vertexes.append(vertex_2_number)
+        canvas.itemconfig(vertex_2["oval"], fill="blue")
+        canvas.tag_raise(vertex_2["text"])
